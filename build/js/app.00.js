@@ -63,9 +63,33 @@
   var import_prefix = __toESM(require_prefix(), 1);
 
   // src/utils.js
-  function clamp(min, max, num) {
-    return Math.min(Math.max(num, min), max);
+  function lerp(v0, v1, t) {
+    return v0 * (1 - t) + v1 * t;
   }
+
+  // src/element.js
+  var Element = class {
+    constructor(element) {
+      this.element = element;
+      this.watch();
+    }
+    watch() {
+      this.observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            this.isInView = true;
+            this.render();
+            console.log("inview - ", this.isInView);
+          } else {
+            this.isInView = false;
+            console.log("inview - ", this.isInView);
+          }
+        });
+      });
+      this.observer.observe(this.element);
+      new ResizeObserver(this.onResize.bind(this)).observe(this.element);
+    }
+  };
 
   // src/slider.js
   var SliderTrigger = class {
@@ -80,8 +104,9 @@
     }
   };
   var tPrefix = (0, import_prefix.default)("transform");
-  var Slider = class {
+  var Slider = class extends Element {
     constructor(element) {
+      super(element);
       this.element = element;
       this.container = this.element.querySelector('[data-slider="container"]');
       this.arrows = {
@@ -93,25 +118,29 @@
         dots: [...this.element.querySelector('[data-slider="dots"]').children]
       };
       this.slidesElements = [...this.container.children];
+      this.slidesNumber = this.slidesElements.length - 1;
       this.setup();
     }
     setup() {
       this.movement = 0;
       this.speed = 0;
       this.position = 0;
+      this.adds = { current: 0, target: 0 };
       this.s = {
         current: 0,
         previous: 0
       };
-      this._factor = 15e-4;
+      this._factor = 13e-4;
       this._damping = 0.95;
+      this._arrowFactor = 0.06;
+      this._snapping = 0.025;
+      this._bounds = 0.3;
       this.init();
     }
     init() {
       this.initDom();
       this.onResize();
       this.initEvents();
-      this.slide();
     }
     initDom() {
       const dotsToAdd = this.slidesElements.length - this.dots.dots.length;
@@ -124,19 +153,30 @@
     calc() {
       this.movement += this.speed;
       this.speed *= this._damping;
+      if (this.movement > 0) {
+        this.movement = lerp(this.movement, 0, this._bounds);
+      }
+      if (this.movement < -this.fullWidth / this.slideWidth) {
+        this.movement = lerp(
+          this.movement,
+          -this.fullWidth / this.slideWidth,
+          this._bounds
+        );
+      }
       if (!this.isClicked) {
         this.rounded = Math.round(this.movement);
-        let diff = this.rounded - this.movement;
-        this.movement += Math.sign(diff) * Math.pow(Math.abs(diff), 0.75) * 0.025;
+        this.movement = lerp(this.movement, this.rounded, this._snapping);
       }
-      this.movement = clamp(-this.fullWidth / this.slideWidth, 0, this.movement);
       this.s.current = Math.abs(Math.round(this.movement));
       this.position = this.movement * this.slideWidth;
     }
-    slide() {
+    render() {
+      if (!this.isInView)
+        return;
       this.calc();
+      this.handleSlideNumber();
       this.container.style[tPrefix] = `translateX(${this.position}px)`;
-      window.requestAnimationFrame(this.slide.bind(this));
+      window.requestAnimationFrame(this.render.bind(this));
     }
     onResize(element) {
       this.slideWidth = this.slidesElements[0].getBoundingClientRect().width;
@@ -144,7 +184,6 @@
       this.fullWidth = width - this.slideWidth;
     }
     initEvents() {
-      new ResizeObserver(this.onResize.bind(this)).observe(this.element);
       if ("ontouchmove" in window) {
         this.element.addEventListener("touchstart", this.mouseDown.bind(this));
         this.element.addEventListener("touchmove", this.mouseMove.bind(this));
@@ -156,18 +195,15 @@
       }
       document.addEventListener("mouseleave", () => {
         this.isClicked = false;
-        this.countSlides();
       });
       this.arrows.left.addEventListener("click", () => this.prevSlide());
       this.arrows.right.addEventListener("click", () => this.nextSlide());
     }
     nextSlide() {
-      this.speed = 0;
-      this.speed -= 0.08;
+      this.speed -= 0.07;
     }
     prevSlide() {
-      this.speed = 0;
-      this.speed += 0.08;
+      this.speed += 0.07;
     }
     mouseDown() {
       this.isClicked = true;
@@ -179,20 +215,28 @@
     }
     mouseUp() {
       this.isClicked = false;
-      this.countSlides();
     }
-    countSlides() {
-      setTimeout(() => {
-        this.handleDots();
-        this.s.previous = this.s.current;
-      }, 350);
+    handleSlideNumber() {
+      if (this.s.current === this.s.previous)
+        return;
+      this.handleActiveDot();
+      this.handleActiveSlide();
+      this.s.previous = this.s.current;
     }
-    handleDots() {
+    handleActiveDot() {
       this.dots.dots.forEach((dot) => dot.classList.remove("active"));
-      this.dots.dots[this.s.current].classList.add("active");
+      if (this.dots.dots[this.s.current]) {
+        this.dots.dots[this.s.current].classList.add("active");
+      }
+    }
+    handleActiveSlide() {
+      this.slidesElements.forEach((dot) => dot.classList.remove("active"));
+      if (this.slidesElements[this.s.current]) {
+        this.slidesElements[this.s.current].classList.add("active");
+      }
     }
   };
 
   // src/app.js
-  new SliderTrigger();
+  window.Slider = new SliderTrigger();
 })();

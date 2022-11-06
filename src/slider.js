@@ -1,5 +1,6 @@
 import Prefix from "prefix";
 import { clamp, lerp } from "./utils";
+import Element from "./element";
 
 // trigger — !! put out
 export default class SliderTrigger {
@@ -21,8 +22,9 @@ export default class SliderTrigger {
 
 const tPrefix = Prefix("transform");
 
-class Slider {
+class Slider extends Element {
   constructor(element) {
+    super(element);
     this.element = element;
     this.container = this.element.querySelector('[data-slider="container"]');
     this.arrows = {
@@ -35,6 +37,7 @@ class Slider {
     };
 
     this.slidesElements = [...this.container.children];
+    this.slidesNumber = this.slidesElements.length - 1;
 
     this.setup();
   }
@@ -43,6 +46,7 @@ class Slider {
     this.movement = 0;
     this.speed = 0;
     this.position = 0;
+    this.adds = { current: 0, target: 0 };
 
     this.s = {
       current: 0,
@@ -50,9 +54,11 @@ class Slider {
     };
 
     // tweakable
-    this._factor = 0.0015;
+    this._factor = 0.0013;
     this._damping = 0.95;
-    this._arrowFactor = 0.065;
+    this._arrowFactor = 0.06;
+    this._snapping = 0.025;
+    this._bounds = 0.3;
 
     this.init();
   }
@@ -62,15 +68,7 @@ class Slider {
     this.onResize();
     this.initEvents();
 
-    // console.log(
-    //   this.element,
-    //   this.container,
-    //   this.arrows,
-    //   this.dots,
-    //   this.slidesElements
-    // );
-
-    this.slide();
+    // this.render();
   }
 
   initDom() {
@@ -95,40 +93,50 @@ class Slider {
     this.movement += this.speed;
     this.speed *= this._damping;
 
+    // bounds
+    if (this.movement > 0) {
+      this.movement = lerp(this.movement, 0, this._bounds);
+    }
+
+    if (this.movement < -this.fullWidth / this.slideWidth) {
+      this.movement = lerp(
+        this.movement,
+        -this.fullWidth / this.slideWidth,
+        this._bounds
+      );
+    }
+
     // snap to position
     if (!this.isClicked) {
       this.rounded = Math.round(this.movement);
-      let diff = this.rounded - this.movement;
-      this.movement += Math.sign(diff) * Math.pow(Math.abs(diff), 0.75) * 0.025; // .025
-    }
 
-    // limit movement
-    this.movement = clamp(-this.fullWidth / this.slideWidth, 0, this.movement);
+      // rounding test 1
+
+      // let diff = this.rounded - this.movement;
+      // const calc = Math.sign(diff) * Math.pow(Math.abs(diff), 0.75) * this._snapping;
+      // this.movement += calc;
+      //rounding test 2
+
+      this.movement = lerp(this.movement, this.rounded, this._snapping);
+    }
 
     // set current active slide
     this.s.current = Math.abs(Math.round(this.movement));
-
-    // console.log(this.s.current);
 
     // reparam position
     this.position = this.movement * this.slideWidth;
   }
 
-  slide() {
-    // GUI TEMP
-    this._factor = 0.0015;
-    this._damping = 0.95;
-    this._arrowFactor = 0.065;
-    // -----
+  render() {
+    if (!this.isInView) return; // check if is in view
 
     this.calc();
-
     this.handleSlideNumber();
 
     // slide
     this.container.style[tPrefix] = `translateX(${this.position}px)`;
 
-    window.requestAnimationFrame(this.slide.bind(this));
+    window.requestAnimationFrame(this.render.bind(this));
   }
 
   /**
@@ -136,17 +144,12 @@ class Slider {
    */
 
   onResize(element) {
-    // console.log(this.element.clientWidth);
-
     this.slideWidth = this.slidesElements[0].getBoundingClientRect().width;
-
     const { width } = this.container.getBoundingClientRect();
     this.fullWidth = width - this.slideWidth;
   }
 
   initEvents() {
-    new ResizeObserver(this.onResize.bind(this)).observe(this.element);
-
     // on mouse drag
     if ("ontouchmove" in window) {
       this.element.addEventListener("touchstart", this.mouseDown.bind(this));
@@ -161,7 +164,6 @@ class Slider {
     // leave flag
     document.addEventListener("mouseleave", () => {
       this.isClicked = false;
-      // this.countSlides();
     });
 
     // arrows click
@@ -172,12 +174,16 @@ class Slider {
   // UI
   nextSlide() {
     // this.speed = 0;
-    this.speed -= this._arrowFactor;
+    // this.speed -= this._arrowFactor;
+    this.speed -= 0.07;
+    // this.adds.target -= 0.02;
   }
 
   prevSlide() {
     // this.speed = 0;
-    this.speed += this._arrowFactor;
+    // this.speed += this._arrowFactor;
+    this.speed += 0.07;
+    // this.adds.target += 0.02;
   }
 
   // MOUSE
@@ -208,11 +214,15 @@ class Slider {
 
   handleActiveDot() {
     this.dots.dots.forEach((dot) => dot.classList.remove("active"));
-    this.dots.dots[this.s.current].classList.add("active");
+    if (this.dots.dots[this.s.current]) {
+      this.dots.dots[this.s.current].classList.add("active");
+    }
   }
 
   handleActiveSlide() {
     this.slidesElements.forEach((dot) => dot.classList.remove("active"));
-    this.slidesElements[this.s.current].classList.add("active");
+    if (this.slidesElements[this.s.current]) {
+      this.slidesElements[this.s.current].classList.add("active");
+    }
   }
 }
