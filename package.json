@@ -16,6 +16,7 @@
     "esbuild": "^0.15.12"
   },
   "dependencies": {
+    "lil-gui": "^0.17.0",
     "prefix": "^1.0.0"
   }
 }

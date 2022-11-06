@@ -2,9 +2,11 @@ lockfileVersion: 5.4
 
 specifiers:
   esbuild: ^0.15.12
+  lil-gui: ^0.17.0
   prefix: ^1.0.0
 
 dependencies:
+  lil-gui: 0.17.0
   prefix: 1.0.0
 
 devDependencies:
@@ -239,6 +241,10 @@ packages:
       esbuild-windows-64: 0.15.12
       esbuild-windows-arm64: 0.15.12
     dev: true
+
+  /lil-gui/0.17.0:
+    resolution: {integrity: sha512-MVBHmgY+uEbmJNApAaPbtvNh1RCAeMnKym82SBjtp5rODTYKWtM+MXHCifLe2H2Ti1HuBGBtK/5SyG4ShQ3pUQ==}
+    dev: false
 
   /prefix/1.0.0:
     resolution: {integrity: sha512-KtGt8TV4nQkYgO6wJ5phkBGAECZW5cs5vQhqnz1LlxGGd8y4LwpW3Bq5pofULjdiMXACDCxisDUhwtFXb7vHfQ==}

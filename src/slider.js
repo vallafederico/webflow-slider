@@ -52,6 +52,7 @@ class Slider {
     // tweakable
     this._factor = 0.0015;
     this._damping = 0.95;
+    this._arrowFactor = 0.065;
 
     this.init();
   }
@@ -114,7 +115,15 @@ class Slider {
   }
 
   slide() {
+    // GUI TEMP
+    this._factor = 0.0015;
+    this._damping = 0.95;
+    this._arrowFactor = 0.065;
+    // -----
+
     this.calc();
+
+    this.handleSlideNumber();
 
     // slide
     this.container.style[tPrefix] = `translateX(${this.position}px)`;
@@ -152,7 +161,7 @@ class Slider {
     // leave flag
     document.addEventListener("mouseleave", () => {
       this.isClicked = false;
-      this.countSlides();
+      // this.countSlides();
     });
 
     // arrows click
@@ -160,16 +169,18 @@ class Slider {
     this.arrows.right.addEventListener("click", () => this.nextSlide());
   }
 
+  // UI
   nextSlide() {
-    this.speed = 0;
-    this.speed -= 0.08;
+    // this.speed = 0;
+    this.speed -= this._arrowFactor;
   }
 
   prevSlide() {
-    this.speed = 0;
-    this.speed += 0.08;
+    // this.speed = 0;
+    this.speed += this._arrowFactor;
   }
 
+  // MOUSE
   mouseDown() {
     this.isClicked = true;
   }
@@ -181,26 +192,27 @@ class Slider {
 
   mouseUp() {
     this.isClicked = false;
-
-    this.countSlides();
-  }
-
-  countSlides() {
-    // dots trackign — NEEDS FIX
-    setTimeout(() => {
-      this.handleDots();
-      this.s.previous = this.s.current;
-    }, 350);
-
-    // reset
   }
 
   /**
    * Manage Dom
    */
 
-  handleDots() {
+  handleSlideNumber() {
+    if (this.s.current === this.s.previous) return;
+
+    this.handleActiveDot();
+    this.handleActiveSlide();
+    this.s.previous = this.s.current;
+  }
+
+  handleActiveDot() {
     this.dots.dots.forEach((dot) => dot.classList.remove("active"));
     this.dots.dots[this.s.current].classList.add("active");
+  }
+
+  handleActiveSlide() {
+    this.slidesElements.forEach((dot) => dot.classList.remove("active"));
+    this.slidesElements[this.s.current].classList.add("active");
   }
 }

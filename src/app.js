@@ -1,3 +1,3 @@
 import Slider from "./slider";
 
-new Slider();
+window.Slider = new Slider();
