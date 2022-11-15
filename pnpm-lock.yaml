@@ -4,10 +4,12 @@ specifiers:
   esbuild: ^0.15.12
   lil-gui: ^0.17.0
   prefix: ^1.0.0
+  tiny-emitter: ^2.1.0
 
 dependencies:
   lil-gui: 0.17.0
   prefix: 1.0.0
+  tiny-emitter: 2.1.0
 
 devDependencies:
   esbuild: 0.15.12
@@ -248,4 +250,8 @@ packages:
 
   /prefix/1.0.0:
     resolution: {integrity: sha512-KtGt8TV4nQkYgO6wJ5phkBGAECZW5cs5vQhqnz1LlxGGd8y4LwpW3Bq5pofULjdiMXACDCxisDUhwtFXb7vHfQ==}
+    dev: false
+
+  /tiny-emitter/2.1.0:
+    resolution: {integrity: sha512-NB6Dk1A9xgQPMoGqC5CVXn123gWyte215ONT5Pp5a0yt4nlEoO1ZWeCwpncaekPHXO60i47ihFnZPiRPjRMq4Q==}
     dev: false

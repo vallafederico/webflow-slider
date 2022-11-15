@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "lil-gui": "^0.17.0",
-    "prefix": "^1.0.0"
+    "prefix": "^1.0.0",
+    "tiny-emitter": "^2.1.0"
   }
 }

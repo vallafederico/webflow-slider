@@ -59,6 +59,59 @@
     }
   });
 
+  // node_modules/.pnpm/tiny-emitter@2.1.0/node_modules/tiny-emitter/index.js
+  var require_tiny_emitter = __commonJS({
+    "node_modules/.pnpm/tiny-emitter@2.1.0/node_modules/tiny-emitter/index.js"(exports, module) {
+      function E() {
+      }
+      E.prototype = {
+        on: function(name, callback, ctx) {
+          var e = this.e || (this.e = {});
+          (e[name] || (e[name] = [])).push({
+            fn: callback,
+            ctx
+          });
+          return this;
+        },
+        once: function(name, callback, ctx) {
+          var self = this;
+          function listener() {
+            self.off(name, listener);
+            callback.apply(ctx, arguments);
+          }
+          ;
+          listener._ = callback;
+          return this.on(name, listener, ctx);
+        },
+        emit: function(name) {
+          var data = [].slice.call(arguments, 1);
+          var evtArr = ((this.e || (this.e = {}))[name] || []).slice();
+          var i = 0;
+          var len = evtArr.length;
+          for (i; i < len; i++) {
+            evtArr[i].fn.apply(evtArr[i].ctx, data);
+          }
+          return this;
+        },
+        off: function(name, callback) {
+          var e = this.e || (this.e = {});
+          var evts = e[name];
+          var liveEvents = [];
+          if (evts && callback) {
+            for (var i = 0, len = evts.length; i < len; i++) {
+              if (evts[i].fn !== callback && evts[i].fn._ !== callback)
+                liveEvents.push(evts[i]);
+            }
+          }
+          liveEvents.length ? e[name] = liveEvents : delete e[name];
+          return this;
+        }
+      };
+      module.exports = E;
+      module.exports.TinyEmitter = E;
+    }
+  });
+
   // src/slider.js
   var import_prefix = __toESM(require_prefix(), 1);
 
@@ -1470,6 +1523,118 @@
     gui.close();
   }
 
+  // src/input-events.js
+  var import_tiny_emitter = __toESM(require_tiny_emitter(), 1);
+  var input_events_default = class extends import_tiny_emitter.default {
+    constructor(target = window, config = { unit: false }) {
+      super();
+      this.target = this.setTargetElement(target);
+      this.config = config;
+      this.init();
+    }
+    init() {
+      this.dragging = false;
+      this.pointer = {
+        x: null,
+        y: null,
+        dx: null,
+        dy: null,
+        ox: null,
+        oy: null,
+        mx: null,
+        my: null
+      };
+      this.store = {
+        x: null,
+        y: null
+      };
+      this.addEvents();
+    }
+    setTargetElement(target) {
+      if (typeof target === "string") {
+        return document.querySelector(target);
+      }
+      return target;
+    }
+    addEvents() {
+      if ("ontouchmove" in window) {
+        this.target.addEventListener("touchstart", this.onDown.bind(this));
+        this.target.addEventListener("touchmove", this.onMove.bind(this));
+        this.target.addEventListener("touchend", this.onUp.bind(this));
+      } else {
+        this.target.addEventListener("mousedown", this.onDown.bind(this));
+        this.target.addEventListener("mousemove", this.onMove.bind(this));
+        this.target.addEventListener("mouseup", this.onUp.bind(this));
+      }
+      document.addEventListener("mouseleave", () => {
+        this.onUp.bind(this);
+      });
+      if (this.config.unit) {
+        let tg = this.target !== window ? this.target : document.body;
+        new ResizeObserver((entry) => this.onResize(entry[0])).observe(tg);
+      }
+    }
+    onResize({ contentRect }) {
+      this.vp = {
+        w: contentRect.width,
+        h: contentRect.height
+      };
+    }
+    getXY(e) {
+      let x = e.touches ? e.touches[0]?.clientX : e.clientX;
+      let y = e.touches ? e.touches[0]?.clientY : e.clientY;
+      const sx = e.touches ? e.touches[0]?.screenX : e.screenX;
+      const sy = e.touches ? e.touches[0]?.screenY : e.screenY;
+      const mvmtX = e.touches ? e.touches[0]?.movementX : e.movementX;
+      const mvmtY = e.touches ? e.touches[0]?.movementY : e.movementY;
+      if (x === void 0 || y === void 0) {
+        x = this.pointer.x;
+        y = this.pointer.y;
+      }
+      return { x, y, sx, sy, mvmtX, mvmtY };
+    }
+    onUp(e) {
+      const { x, y } = this.getXY(e);
+      this.pointer.x = x;
+      this.pointer.y = y;
+      this.dragging = false;
+      this.emit("up", this.pointer);
+      this.store.x = this.store.y = null;
+    }
+    onDown(e) {
+      const { x, y } = this.getXY(e);
+      this.pointer.x = this.pointer.ox = x;
+      this.pointer.y = this.pointer.oy = y;
+      this.dragging = true;
+      this.emit("down", this.pointer);
+    }
+    onMove(e) {
+      const { x, y } = this.getXY(e);
+      this.pointer.x = x;
+      this.pointer.y = y;
+      if (this.dragging)
+        this.onDrag(e);
+      this.emit("move", this.pointer);
+    }
+    onDrag(e) {
+      const { x, y, sx, sy, mvmtX, mvmtY } = this.getXY(e);
+      this.pointer.dx = x - this.pointer.ox;
+      this.pointer.dy = -y + this.pointer.oy;
+      if (this.store.x === null) {
+        this.store.x = sx;
+        this.store.y = sy;
+      } else {
+        this.pointer.mx = sx - this.store.x;
+        this.pointer.my = sy - this.store.y;
+        this.store.x = sx;
+        this.store.y = sy;
+      }
+      this.pointer.mvmtX = mvmtX;
+      this.pointer.mvmtY = mvmtY;
+      this.emit("drag", this.pointer);
+    }
+  };
+
   // src/slider.js
   initGui();
   var SliderTrigger = class {
@@ -1479,6 +1644,7 @@
       this.init();
     }
     init() {
+      console.log("init");
       for (const item of this.items)
         new Slider(item);
     }
@@ -1572,15 +1738,8 @@
       this.fullWidth = width - this.slideWidth;
     }
     initEvents() {
-      if ("ontouchmove" in window) {
-        this.element.addEventListener("touchstart", this.mouseDown.bind(this));
-        this.element.addEventListener("touchmove", this.mouseMove.bind(this));
-        this.element.addEventListener("touchend", this.mouseUp.bind(this));
-      } else {
-        this.element.addEventListener("mousedown", this.mouseDown.bind(this));
-        this.element.addEventListener("mousemove", this.mouseMove.bind(this));
-        this.element.addEventListener("mouseup", this.mouseUp.bind(this));
-      }
+      this.mouse = new input_events_default(this.element);
+      this.mouse.on("drag", this.mouseDrag.bind(this));
       document.addEventListener("mouseleave", () => {
         this.isClicked = false;
       });
@@ -1597,9 +1756,9 @@
       this.isClicked = true;
     }
     mouseMove(e) {
-      if (!this.isClicked)
-        return;
-      this.speed = e.movementX * this._factor;
+    }
+    mouseDrag({ mx, mvmtX }) {
+      this.speed = mvmtX * this._factor;
     }
     mouseUp() {
       this.isClicked = false;
