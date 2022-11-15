@@ -16,7 +16,7 @@ export default class SliderTrigger {
   }
 
   init() {
-    console.log("init");
+    console.log("v2");
     for (const item of this.items) new Slider(item);
   }
 }
@@ -216,9 +216,9 @@ class Slider extends Element {
     // this.speed = e.movementX * this._factor;
   }
 
-  mouseDrag({ mx, mvmtX }) {
+  mouseDrag({ mx }) {
     // console.log("mx", mx);
-    this.speed = mvmtX * this._factor;
+    this.speed = mx * this._factor;
   }
 
   mouseUp() {

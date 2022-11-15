@@ -84,15 +84,12 @@ export default class extends Emitter {
     const sx = e.touches ? e.touches[0]?.screenX : e.screenX;
     const sy = e.touches ? e.touches[0]?.screenY : e.screenY;
 
-    const mvmtX = e.touches ? e.touches[0]?.movementX : e.movementX;
-    const mvmtY = e.touches ? e.touches[0]?.movementY : e.movementY;
-
     if (x === undefined || y === undefined) {
       x = this.pointer.x;
       y = this.pointer.y;
     }
 
-    return { x, y, sx, sy, mvmtX, mvmtY };
+    return { x, y, sx, sy };
   }
 
   /** Events
@@ -150,9 +147,6 @@ export default class extends Emitter {
       this.store.x = sx;
       this.store.y = sy;
     }
-
-    this.pointer.mvmtX = mvmtX;
-    this.pointer.mvmtY = mvmtY;
 
     this.emit("drag", this.pointer);
   }
