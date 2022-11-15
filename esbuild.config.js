@@ -52,9 +52,6 @@ function serveFile() {
     }
   ).then((server) => {
     console.log(`↑ FLOW`);
-    console.log(" ");
-    console.log("https://webflow.com/design/z0nes");
-    console.log("https://codesandbox.io/s/z0nes-relay-2bv8mz");
     //   server.stop();
   });
 }

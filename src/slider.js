@@ -1,6 +1,9 @@
 import Prefix from "prefix";
 import { clamp, lerp } from "./utils";
 import Element from "./element";
+import { initGui } from "./gui";
+
+initGui();
 
 // trigger — !! put out
 export default class SliderTrigger {
@@ -111,12 +114,11 @@ class Slider extends Element {
       this.rounded = Math.round(this.movement);
 
       // rounding test 1
-
       // let diff = this.rounded - this.movement;
       // const calc = Math.sign(diff) * Math.pow(Math.abs(diff), 0.75) * this._snapping;
       // this.movement += calc;
-      //rounding test 2
 
+      //rounding test 2
       this.movement = lerp(this.movement, this.rounded, this._snapping);
     }
 
@@ -130,6 +132,8 @@ class Slider extends Element {
   render() {
     if (!this.isInView) return; // check if is in view
 
+    this.handleGUI();
+
     this.calc();
     this.handleSlideNumber();
 
@@ -137,6 +141,15 @@ class Slider extends Element {
     this.container.style[tPrefix] = `translateX(${this.position}px)`;
 
     window.requestAnimationFrame(this.render.bind(this));
+  }
+
+  handleGUI() {
+    const { GUI } = window;
+    this._factor = GUI._factor;
+    this._damping = GUI._damping;
+    // this._arrowFactor = GUI._arrowFactor;
+    this._snapping = GUI._snapping;
+    this._bounds = GUI._bounds;
   }
 
   /**
